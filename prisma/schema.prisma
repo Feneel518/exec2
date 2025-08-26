@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/* ================
+ * Product (master)
+ * ================ */
+model Product {
+  id         String   @id @default(uuid()) @db.Uuid
+
+  // required
+  name       String
+  slug       String   @unique
+
+  // legacy/default visual
+  image      String
+
+  // shared technical/spec fields (kept exactly as requested)
+  type       String?
+  protection String?
+  gasGroup   String?
+  material   String?
+  finish     String?
+  rating     String?
+  terminals  String?
+  hardware   String?
+  gasket     String?
+  mounting   String?
+  cableEntry String?
+  earthing    String?   // (typo preserved as-is)
+  typeNumber String?
+  hsnCode    String?
+  cutoutSize String?
+  plateSize  String?
+  glass      String?
+  wireGuard  String?
+  variant    String?
+  size       String?
+  rpm        String?
+  kW         String?
+  HorsePower String?
+
+  // housekeeping
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // variants
+  variants   ProductVariant[]
+
+  // category 
+  categoryId String   @db.Uuid
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@index([name, slug])
+    @@index([categoryId]) // add this
+}
+
+/* ======================
+ * ProductVariant (simple)
+ * ======================
+ * subName: "Mini", "Sunflower", etc.
+ * imageUrl: photo for that variant
+ * drawingUrl: engineering drawing for that variant
+ */
+model ProductVariant {
+  id          String   @id @default(uuid()) @db.Uuid
+  productId   String   @db.Uuid
+
+  subName     String       // e.g., "Mini", "Sunflower"
+  imageUrl    String?      // e.g., https://.../mini.jpg
+  drawingUrl  String?      // e.g., https://.../mini-drawing.pdf
+
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product     Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@unique([productId, subName])  // one "Mini" per product
+}
+
+
+// ---------- Category ----------
+model Category {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  image       String
+  slug        String   @unique
+  description String?
+  isActive   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // One category → many products
+  products    Product[]
+}

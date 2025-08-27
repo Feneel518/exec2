@@ -18,80 +18,103 @@ datasource db {
  * Product (master)
  * ================ */
 model Product {
-  id         String   @id @default(uuid()) @db.Uuid
-
-  // required
-  name       String
-  slug       String   @unique
-
-  // legacy/default visual
-  image      String
-
-  // shared technical/spec fields (kept exactly as requested)
-  type       String?
-  protection String?
-  gasGroup   String?
-  material   String?
-  finish     String?
-  rating     String?
-  terminals  String?
-  hardware   String?
-  gasket     String?
-  mounting   String?
-  cableEntry String?
-  earthing    String?   // (typo preserved as-is)
-  typeNumber String?
-  hsnCode    String?
-  cutoutSize String?
-  plateSize  String?
-  glass      String?
-  wireGuard  String?
-  variant    String?
-  size       String?
-  rpm        String?
-  kW         String?
-  HorsePower String?
-
-  // housekeeping
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  // variants
-  variants   ProductVariant[]
-
-  // category 
-  categoryId String   @db.Uuid
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  @@index([name, slug])
-    @@index([categoryId]) // add this
-}
-
-/* ======================
- * ProductVariant (simple)
- * ======================
- * subName: "Mini", "Sunflower", etc.
- * imageUrl: photo for that variant
- * drawingUrl: engineering drawing for that variant
- */
-model ProductVariant {
   id          String   @id @default(uuid()) @db.Uuid
-  productId   String   @db.Uuid
+  name        String
+  slug        String   @unique
 
-  subName     String       // e.g., "Mini", "Sunflower"
-  imageUrl    String?      // e.g., https://.../mini.jpg
-  drawingUrl  String?      // e.g., https://.../mini-drawing.pdf
+  // category relation
+  categoryId  String   @db.Uuid
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  isDefault   Boolean  @default(false)
+  // optional listing image (we'll add gallery later)
+  image       String?
+
+  // explosion-proof technical/spec fields (extend as needed)
+  type        String?
+  protection  String?
+  gasGroup    String?
+  material    String?
+  finish      String?
+  rating      String?
+  terminals   String?
+  hardware    String?
+  gasket      String?
+  mounting    String?
+  cableEntry  String?
+  earthing    String?
+  typeNumber  String?
+  hsnCode     String?
+  cutoutSize  String?
+  plateSize   String?
+  glass       String?
+  wireGuard   String?
+  size        String?
+  rpm         Int?
+  kW          Decimal? @db.Decimal(10,2)
+  horsePower  Decimal? @db.Decimal(10,2)
+  extraSpecs  Json?     // flexible catch-all: { "IP":"IP66", "tempClass":"T6" }
+
+   includedComponents ProductComponentsOnProducts[]
+   variants  ProductVariant[]  // ← add this
+
+  // status & audit
   isActive    Boolean  @default(true)
-
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  product     Product  @relation(fields: [productId], references: [id])
+  @@index([categoryId])
+  @@index([isActive])
+  @@unique([categoryId, name]) // avoid duplicate names inside a category
+}
 
+model ProductComponents {
+  id     String  @id @default(uuid()) @db.Uuid
+  item   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ProductComponentsOnProducts ProductComponentsOnProducts[]
+}
+model ProductComponentsOnProducts {
+  id                  String  @id @default(uuid()) @db.Uuid
+
+  productId           String  @db.Uuid
+  product             Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  productComponentId  String  @db.Uuid
+  productComponent    ProductComponents @relation(fields: [productComponentId], references: [id], onDelete: Restrict)
+
+  quantity            Decimal? @db.Decimal(12,3)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([productId, productComponentId])
   @@index([productId])
-  @@unique([productId, subName])  // one "Mini" per product
+}
+model ProductVariant {
+  id         String   @id @default(uuid()) @db.Uuid
+  productId  String   @db.Uuid
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  subName    String             // e.g., "Single Entry M20", "2 Pole 16A"
+  sku        String?  @unique
+  typeNumber String?            // variant-specific code, if any
+  attributes Json?              // { poles: 2, thread: "M20" } (optional)
+
+  imageUrl   String?            // one image per variant (keep it simple)
+  drawingUrl String?            // one PDF/PNG per variant (keep it simple)
+
+  isDefault  Boolean @default(false)
+  isActive   Boolean @default(true)
+  sortOrder  Int     @default(0)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId, sortOrder])
+  @@index([productId, isActive])
 }
 
 

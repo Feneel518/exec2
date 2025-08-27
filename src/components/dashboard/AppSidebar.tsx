@@ -54,7 +54,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {sidebarGroups.map((group, index) => {
             const GroupIcon = group.icon;
             return (
-              <AccordionItem value={`item-${index + 1}`} className="w-full">
+              <AccordionItem
+                key={group.label}
+                value={`item-${index + 1}`}
+                className="w-full"
+              >
                 <SidebarGroup key={group.label} className="w-full">
                   <SidebarGroupLabel className="w-full">
                     <AccordionTrigger className="text-white w-full ">

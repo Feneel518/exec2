@@ -67,8 +67,6 @@ export default function UpsertDialog({ trigger, initial }: Props) {
 
   const imageUrl = form.watch("imageUrl") || "";
   const onSubmit = async (values: CategoryUpsertInput) => {
-    console.log(values);
-
     try {
       if (initial?.id) {
         await updateCategory({ ...values, id: initial.id });

@@ -28,7 +28,7 @@ const Layout: FC<LayoutProps> = ({ children }) => {
           />
           Welcome, {user?.fullName}
         </header>
-        <div className="p-8">{children}</div>
+        <div className="p-2 lg:p-8">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
